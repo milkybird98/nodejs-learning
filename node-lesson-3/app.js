@@ -11,7 +11,7 @@ app.get("/",function (req,res,next){
       }    
 
       let $ = cheerio.load(sres.text);
-      let item = [];
+      let item =[];
 
       $('#topic_list .topic_title').each(function (id,element) {
         let $element = $(element);
