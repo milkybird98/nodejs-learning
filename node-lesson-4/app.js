@@ -2,6 +2,7 @@ var ul = require("url");
 var cheerio = require("cheerio");
 var superagent = require("superagent");
 var eventproxy = require("eventproxy");
+var async = require('async');
 
 superagent.get("https://cnodejs.org/")
   .end(function (err, res) {
@@ -20,8 +21,8 @@ superagent.get("https://cnodejs.org/")
 
     var ep = new eventproxy();
 
-    ep.after('topics', topicUrls.length, function (element) {
-      element = element.map(element => {
+    ep.after('topics', topicUrls.length, function (allres) {
+      let res = allres.map(element => {
         let url = element[0];
         let html = element[1];
         let htmlCom = element[2];
@@ -36,11 +37,11 @@ superagent.get("https://cnodejs.org/")
         }
       });
 
-      console.log(element);
+      console.log(res);
     });
-
-    topicUrls.forEach(element => {
-      superagent.get(element)
+    console.log(topicUrls)
+    async.mapLimit(topicUrls, 5, function (tpurl, callback) {
+      superagent.get(tpurl)
         .end(function (err, res) {
           if (err) {
             console.error(err);
@@ -49,9 +50,11 @@ superagent.get("https://cnodejs.org/")
           let url = ul.resolve('https://cnodejs.org/', String($('[class="dark reply_author"]').eq(0).attr('href')));
           superagent.get(url)
             .end(function (err, resCom) {
-              ep.emit('topics', [element, res.text, resCom.text]);
+              ep.emit('topics', [url, res.text, resCom.text]);
+              callback(null, url);
             });
         });
-      sleep
+    }, function (err, result) {
+      console.log(result);
     });
   });
